@@ -15,7 +15,7 @@ use Framework\Routing\Router;
 use Framework\Support\Config;
 use Framework\Support\Pipeline;
 
-class Application
+class Application extends Container
 {
     private $basePath;
     private $config;
@@ -30,6 +30,11 @@ class Application
         $this->router = new Router();
         $this->exceptionHandler = new ExceptionHandler($this);
         $this->db = null;
+
+        $this->instance('app', $this);
+        $this->instance(__CLASS__, $this);
+        $this->instance('router', $this->router);
+        $this->instance('exception_handler', $this->exceptionHandler);
     }
 
     public function basePath()
@@ -125,6 +130,7 @@ class Application
             $base,
             $base . DIRECTORY_SEPARATOR . 'logs',
             $base . DIRECTORY_SEPARATOR . 'rate_limit',
+            $base . DIRECTORY_SEPARATOR . 'cache',
         );
 
         foreach ($dirs as $d) {

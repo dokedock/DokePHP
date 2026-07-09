@@ -21,8 +21,9 @@ class Request
     private $jsonBody;
     private $formBody;
     private $jsonError;
+    private $attributes;
 
-    public function __construct(array $get, array $post, array $cookie, array $files, array $server, $rawBody, $jsonBody, array $formBody, $jsonError)
+    public function __construct(array $get, array $post, array $cookie, array $files, array $server, $rawBody, $jsonBody, array $formBody, $jsonError, array $attributes = array())
     {
         $this->get = $get;
         $this->post = $post;
@@ -33,6 +34,7 @@ class Request
         $this->jsonBody = $jsonBody;
         $this->formBody = $formBody;
         $this->jsonError = (string) $jsonError;
+        $this->attributes = $attributes;
     }
 
     public static function capture()
@@ -167,6 +169,18 @@ class Request
     public function jsonError()
     {
         return (string) $this->jsonError;
+    }
+
+    public function setAttribute($key, $value)
+    {
+        $this->attributes[(string) $key] = $value;
+        return $this;
+    }
+
+    public function attribute($key, $default = null)
+    {
+        $key = (string) $key;
+        return array_key_exists($key, $this->attributes) ? $this->attributes[$key] : $default;
     }
 
     public function input($key, $default = null)

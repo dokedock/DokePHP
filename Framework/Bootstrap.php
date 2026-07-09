@@ -24,7 +24,13 @@ $loader->addPsr4('App', $basePath . DS . 'App');
 $loader->register();
 
 $cfgDir = $basePath . DS . 'App' . DS . 'Config';
-$config = \Framework\Support\Config::load($cfgDir);
+$configCache = $basePath . DS . 'storage' . DS . 'cache' . DS . 'config.php';
+if (is_file($configCache)) {
+    $tmp = include $configCache;
+    $config = is_array($tmp) ? $tmp : \Framework\Support\Config::load($cfgDir);
+} else {
+    $config = \Framework\Support\Config::load($cfgDir);
+}
 
 $tz = \Framework\Support\Config::get($config, 'app.timezone', '');
 if ($tz !== '') {

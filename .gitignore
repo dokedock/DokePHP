@@ -3,8 +3,13 @@
 .vscode/
 
 storage/logs/*.log
+storage/logs/*.jsonl
 storage/rate_limit/*.json
+storage/cache/*
+!storage/cache/.gitkeep
+!storage/logs/.gitkeep
+!storage/rate_limit/.gitkeep
+!storage/.gitkeep
 
 App/Config/app.local.php
 .env
-

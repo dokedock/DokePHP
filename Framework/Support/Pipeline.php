@@ -28,7 +28,17 @@ class Pipeline
             $next = function ($request) use ($mw, $next, $app) {
                 if (is_string($mw)) {
                     $mw = ltrim($mw, '\\');
-                    $mw = new $mw($app);
+                    if (strpos($mw, '\\') === false && is_object($app) && method_exists($app, 'config')) {
+                        $aliases = $app->config('middleware_alias', array());
+                        if (is_array($aliases) && array_key_exists($mw, $aliases) && is_string($aliases[$mw]) && $aliases[$mw] !== '') {
+                            $mw = (string) $aliases[$mw];
+                        }
+                    }
+                    if (is_object($app) && method_exists($app, 'make')) {
+                        $mw = $app->make($mw);
+                    } else {
+                        $mw = new $mw($app);
+                    }
                 }
 
                 if (is_object($mw) && method_exists($mw, 'handle')) {
@@ -46,4 +56,3 @@ class Pipeline
         return $next;
     }
 }
-

@@ -8,6 +8,7 @@ namespace Framework\Http;
 
 use Framework\Foundation\Application;
 use Framework\Foundation\MiddlewareInterface;
+use Framework\Support\Logger;
 
 class AccessLogMiddleware implements MiddlewareInterface
 {
@@ -25,6 +26,10 @@ class AccessLogMiddleware implements MiddlewareInterface
         $rid = (string) $request->header('X-Request-Id', '');
         if ($rid === '') {
             $rid = $this->makeRequestId();
+        }
+
+        if (method_exists($request, 'setAttribute')) {
+            $request->setAttribute('request_id', $rid);
         }
 
         $resp = call_user_func($next, $request);
@@ -60,21 +65,15 @@ class AccessLogMiddleware implements MiddlewareInterface
 
     private function write($rid, $ip, $method, $path, $status, $durationMs)
     {
-        $dir = $this->app->basePath() . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs';
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0755, true);
-            if (!is_dir($dir)) {
-                return;
-            }
-        }
-
-        $line = '[' . date('Y-m-d H:i:s') . '] ';
-        $line .= $rid . ' ';
-        $line .= $ip . ' ';
-        $line .= $method . ' ' . $path . ' ';
-        $line .= $status . ' ';
-        $line .= $durationMs . "ms\n";
-
-        @file_put_contents($dir . DIRECTORY_SEPARATOR . 'access.log', $line, FILE_APPEND);
+        $file = $this->app->basePath() . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'access.jsonl';
+        $logger = new Logger($file);
+        $logger->info('access', array(
+            'request_id' => (string) $rid,
+            'ip' => (string) $ip,
+            'method' => (string) $method,
+            'path' => (string) $path,
+            'status' => (int) $status,
+            'duration_ms' => (int) $durationMs,
+        ));
     }
 }

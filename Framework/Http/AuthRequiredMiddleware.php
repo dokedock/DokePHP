@@ -9,6 +9,7 @@ namespace Framework\Http;
 use Framework\Foundation\Application;
 use Framework\Foundation\MiddlewareInterface;
 use Framework\Support\Api;
+use Framework\Support\Auth;
 use Framework\Support\ErrorCodes;
 
 class AuthRequiredMiddleware implements MiddlewareInterface
@@ -30,31 +31,14 @@ class AuthRequiredMiddleware implements MiddlewareInterface
         $auth = method_exists($request, 'authorization') ? (string) $request->authorization('') : (string) $request->header('Authorization', '');
         $token = $this->parseBearer($auth);
 
-        $tokens = isset($cfg['tokens']) && is_array($cfg['tokens']) ? $cfg['tokens'] : array();
-        $tokenFile = isset($cfg['token_file']) ? (string) $cfg['token_file'] : '';
-        if ($tokenFile !== '') {
-            if (strpos($tokenFile, DIRECTORY_SEPARATOR) !== 0) {
-                $tokenFile = $this->app->basePath() . DIRECTORY_SEPARATOR . ltrim($tokenFile, '/\\');
-            }
-
-            if (is_file($tokenFile) && is_readable($tokenFile)) {
-                $lines = file($tokenFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                if (is_array($lines)) {
-                    foreach ($lines as $line) {
-                        $line = trim((string) $line);
-                        if ($line === '' || strpos($line, '#') === 0) {
-                            continue;
-                        }
-                        $tokens[] = $line;
-                    }
-                    $tokens = array_values(array_unique($tokens));
-                }
-            }
+        $tokenMap = Auth::loadTokenMap($this->app, $cfg);
+        $payload = Auth::validateToken($token, $tokenMap);
+        if (!$payload) {
+            return Api::fail('', ErrorCodes::UNAUTHORIZED, 401, null);
         }
 
-        $ok = $token !== '' && in_array($token, $tokens, true);
-        if (!$ok) {
-            return Api::fail('', ErrorCodes::UNAUTHORIZED, 401, null);
+        if (method_exists($request, 'setAttribute')) {
+            $request->setAttribute('auth', $payload);
         }
 
         return call_user_func($next, $request);

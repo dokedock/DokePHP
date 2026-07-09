@@ -18,6 +18,10 @@ class Validator
 
             $exists = array_key_exists($field, $data);
             $value = $exists ? $data[$field] : null;
+            $skipIfMissing = in_array('sometimes', $list, true);
+            if ($skipIfMissing && !$exists) {
+                continue;
+            }
 
             foreach ($list as $rule) {
                 $name = $rule;
@@ -53,6 +57,10 @@ class Validator
 
     private static function checkRule($name, $arg, $exists, $value)
     {
+        if ($name === 'sometimes') {
+            return null;
+        }
+
         if ($name === 'required') {
             if (!$exists) {
                 return 'required';
@@ -69,8 +77,28 @@ class Validator
             return null;
         }
 
+        if ($name === 'nullable') {
+            return null;
+        }
+
         if (!$exists || $value === null) {
             return null;
+        }
+
+        if ($name === 'bool' || $name === 'boolean') {
+            if (is_bool($value)) {
+                return null;
+            }
+            if (is_int($value) && ($value === 0 || $value === 1)) {
+                return null;
+            }
+            if (is_string($value)) {
+                $v = strtolower(trim($value));
+                if (in_array($v, array('0', '1', 'true', 'false', 'yes', 'no', 'on', 'off'), true)) {
+                    return null;
+                }
+            }
+            return 'must_be_bool';
         }
 
         if ($name === 'string') {
@@ -89,6 +117,21 @@ class Validator
 
         if ($name === 'array') {
             return is_array($value) ? null : 'must_be_array';
+        }
+
+        if ($name === 'url') {
+            if (!is_string($value)) {
+                return 'invalid_url';
+            }
+            return filter_var($value, FILTER_VALIDATE_URL) ? null : 'invalid_url';
+        }
+
+        if ($name === 'date') {
+            if (!is_string($value)) {
+                return 'invalid_date';
+            }
+            $t = strtotime($value);
+            return $t === false ? 'invalid_date' : null;
         }
 
         if ($name === 'min') {
@@ -148,4 +191,3 @@ class Validator
         return null;
     }
 }
-

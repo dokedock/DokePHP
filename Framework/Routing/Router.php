@@ -195,7 +195,11 @@ class Router
         if (is_string($handler) && strpos($handler, '@') !== false) {
             list($class, $method) = explode('@', $handler, 2);
             $class = ltrim($class, '\\');
-            $obj = new $class($app);
+            if (method_exists($app, 'make')) {
+                $obj = $app->make($class);
+            } else {
+                $obj = new $class($app);
+            }
             return call_user_func(array($obj, $method), $request, $params);
         }
 
@@ -204,12 +208,16 @@ class Router
             $method = $handler[1];
             if (is_string($target)) {
                 $target = ltrim($target, '\\');
-                $target = new $target($app);
+                if (method_exists($app, 'make')) {
+                    $target = $app->make($target);
+                } else {
+                    $target = new $target($app);
+                }
             }
             return call_user_func(array($target, $method), $request, $params);
         }
 
-        return Response::json(array('code' => 500, 'message' => 'invalid_handler', 'data' => null), 500);
+        return Api::fail('invalid_handler', ErrorCodes::SERVER_ERROR, 500, null);
     }
 
     private function currentGroup()

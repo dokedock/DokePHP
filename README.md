@@ -53,9 +53,16 @@ php -S 127.0.0.1:8000 -t Public
 - JSON 输出：`Framework/Support/Api.php`
 - 跨域处理：`Framework/Http/Cors.php`（含 OPTIONS 预检）
 - 路由：`Framework/Routing/Router.php`
-- 异常：`Framework/Exception/Handler.php`（记录到 `storage/logs/app.log`）
+- 异常：`Framework/Exception/Handler.php`（记录到 `storage/logs/app.jsonl`）
 - 中间件：`Framework/Support/Pipeline.php`（从 `App/Config/app.php` 的 `middleware` 数组加载，全局生效）
 - 路由分组/路由级中间件：`Framework/Routing/Router.php`
+
+## 常用脚本
+
+```bash
+php bin/cache-config.php
+php bin/migrate.php
+```
 
 ## 上线建议（必须做）
 
@@ -67,5 +74,6 @@ php -S 127.0.0.1:8000 -t Public
 - 如需接口鉴权：
   - 全局鉴权：启用 `auth.enabled` 并配置 `auth.tokens` 或 `auth.token_file`（Bearer Token）
   - 路由级强制鉴权：对路由/路由组使用 `Framework\\Http\\AuthRequiredMiddleware`
+- 如需开放 API / Webhook 验签：启用 `signature.enabled` 并配置 `signature.secret`，客户端按约定传 `X-Signature/X-Timestamp/X-Nonce`
 - 生产环境建议启用访问日志与基础限流（本项目已提供中间件）
 - 接口参数建议统一走 `BaseController::validate()`（字段级错误会以 422 返回）

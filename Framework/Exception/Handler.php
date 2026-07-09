@@ -11,6 +11,7 @@ use Framework\Http\Cors;
 use Framework\Http\Request;
 use Framework\Support\Api;
 use Framework\Support\ErrorCodes;
+use Framework\Support\Logger;
 
 class Handler
 {
@@ -95,20 +96,17 @@ class Handler
 
     private function writeLog($e, Request $request)
     {
-        $dir = $this->app->basePath() . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs';
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0755, true);
-            if (!is_dir($dir)) {
-                return;
-            }
-        }
-
-        $line = '[' . date('Y-m-d H:i:s') . '] ';
-        $line .= $request->method() . ' ' . $request->path() . ' ';
-        $line .= get_class($e) . ': ' . $e->getMessage();
-        $line .= ' in ' . $e->getFile() . ':' . $e->getLine();
-        $line .= "\n";
-
-        @file_put_contents($dir . DIRECTORY_SEPARATOR . 'app.log', $line, FILE_APPEND);
+        $file = $this->app->basePath() . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'app.jsonl';
+        $logger = new Logger($file);
+        $rid = method_exists($request, 'attribute') ? (string) $request->attribute('request_id', '') : '';
+        $logger->error('exception', array(
+            'request_id' => $rid,
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'type' => get_class($e),
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ));
     }
 }
