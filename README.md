@@ -1,4 +1,4 @@
-# DokePHP（PHP 5.6 - 8.3）
+# DokePHP 道客PHP框架（PHP 5.6 - 8.3）
 
 目标：不依赖任何第三方库，不用 Composer，仅用纯 PHP 实现“内核 / 业务”分离的最小接口框架骨架。
 
