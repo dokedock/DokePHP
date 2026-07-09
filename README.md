@@ -48,7 +48,7 @@ php -S 127.0.0.1:8000 -t Public
 
 ## 说明
 
-- 自动加载：`Framework/Foundation/Autoloader.php`，PSR-4 思路手写实现
+- 自动加载：`Framework/Foundation/Autoloader.php`
 - 启动顺序：`Public/index.php` → `Framework/Bootstrap.php` → 加载配置/注册自动加载/加载路由 → `Application::run()`
 - JSON 输出：`Framework/Support/Api.php`
 - 跨域处理：`Framework/Http/Cors.php`（含 OPTIONS 预检）
