@@ -114,6 +114,41 @@ class Db
         return $st->fetchAll();
     }
 
+    public function paginate($sqlItems, $sqlCount, array $params, $page, $pageSize)
+    {
+        $page = (int) $page;
+        $pageSize = (int) $pageSize;
+        if ($page <= 0) {
+            $page = 1;
+        }
+        if ($pageSize <= 0) {
+            $pageSize = 20;
+        }
+
+        $offset = ($page - 1) * $pageSize;
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        $countRow = $this->fetchOne($sqlCount, $params);
+        $total = 0;
+        if (is_array($countRow)) {
+            $first = array_values($countRow);
+            $total = isset($first[0]) ? (int) $first[0] : 0;
+        }
+
+        $sqlItems = rtrim((string) $sqlItems, " \t\n\r;");
+        $sqlItems .= ' LIMIT ' . (int) $pageSize . ' OFFSET ' . (int) $offset;
+        $items = $this->fetchAll($sqlItems, $params);
+
+        return array(
+            'items' => is_array($items) ? $items : array(),
+            'total' => (int) $total,
+            'page' => (int) $page,
+            'page_size' => (int) $pageSize,
+        );
+    }
+
     public function exec($sql, array $params = array())
     {
         $st = $this->pdo()->prepare($sql);

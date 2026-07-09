@@ -29,11 +29,7 @@ class Migrator
         $this->ensureTable();
         $applied = $this->appliedFiles();
 
-        $files = glob($dir . DIRECTORY_SEPARATOR . '*.sql');
-        if (!is_array($files)) {
-            $files = array();
-        }
-        sort($files);
+        $files = $this->listUpFiles($dir);
 
         $appliedNow = array();
         $skipped = array();
@@ -63,6 +59,82 @@ class Migrator
         }
 
         return array('applied' => $appliedNow, 'skipped' => $skipped);
+    }
+
+    public function status($dir)
+    {
+        $dir = rtrim((string) $dir, DIRECTORY_SEPARATOR);
+        if (!is_dir($dir)) {
+            return array();
+        }
+
+        $this->ensureTable();
+        $applied = $this->appliedFiles();
+        $files = $this->listUpFiles($dir);
+
+        $out = array();
+        foreach ($files as $file) {
+            $name = basename($file);
+            $out[] = array(
+                'filename' => $name,
+                'applied' => isset($applied[$name]) ? true : false,
+            );
+        }
+
+        return $out;
+    }
+
+    public function rollback($dir, $steps = 1)
+    {
+        $dir = rtrim((string) $dir, DIRECTORY_SEPARATOR);
+        if (!is_dir($dir)) {
+            return array('rolled_back' => array(), 'skipped' => array());
+        }
+
+        $steps = (int) $steps;
+        if ($steps <= 0) {
+            $steps = 1;
+        }
+
+        $this->ensureTable();
+        $rows = $this->db->fetchAll('SELECT id, filename FROM ' . $this->tableName() . ' ORDER BY id DESC');
+        if (!is_array($rows)) {
+            $rows = array();
+        }
+
+        $rolled = array();
+        $skipped = array();
+
+        $picked = array_slice($rows, 0, $steps);
+        foreach ($picked as $r) {
+            if (!is_array($r) || !isset($r['filename'])) {
+                continue;
+            }
+            $name = (string) $r['filename'];
+            $id = isset($r['id']) ? (int) $r['id'] : 0;
+
+            $down = $this->downFilename($name);
+            $downFile = $dir . DIRECTORY_SEPARATOR . $down;
+            if (!is_file($downFile)) {
+                $skipped[] = $name;
+                continue;
+            }
+
+            $sql = file_get_contents($downFile);
+            if (!is_string($sql) || trim($sql) === '') {
+                $skipped[] = $name;
+                continue;
+            }
+
+            $this->db->transaction(function ($db) use ($sql, $id, $name) {
+                $db->pdo()->exec($sql);
+                $db->exec('DELETE FROM ' . $this->tableName() . ' WHERE filename = :f', array('f' => $name));
+            });
+
+            $rolled[] = $name;
+        }
+
+        return array('rolled_back' => $rolled, 'skipped' => $skipped);
     }
 
     private function ensureTable()
@@ -98,6 +170,38 @@ class Migrator
             }
         }
         return $out;
+    }
+
+    private function listUpFiles($dir)
+    {
+        $files = glob($dir . DIRECTORY_SEPARATOR . '*.sql');
+        if (!is_array($files)) {
+            $files = array();
+        }
+        sort($files);
+
+        $out = array();
+        foreach ($files as $file) {
+            $name = basename($file);
+            if (substr($name, -9) === '.down.sql') {
+                continue;
+            }
+            $out[] = $file;
+        }
+
+        return $out;
+    }
+
+    private function downFilename($upName)
+    {
+        $upName = (string) $upName;
+        if (substr($upName, -7) === '.up.sql') {
+            return substr($upName, 0, -7) . '.down.sql';
+        }
+        if (substr($upName, -4) === '.sql') {
+            return substr($upName, 0, -4) . '.down.sql';
+        }
+        return $upName . '.down.sql';
     }
 
     private function tableName()

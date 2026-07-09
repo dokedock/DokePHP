@@ -26,8 +26,14 @@ class Pipeline
             $app = $this->app;
 
             $next = function ($request) use ($mw, $next, $app) {
+                $mwParam = null;
                 if (is_string($mw)) {
                     $mw = ltrim($mw, '\\');
+                    if (strpos($mw, ':') !== false) {
+                        $tmp = explode(':', $mw, 2);
+                        $mw = $tmp[0];
+                        $mwParam = isset($tmp[1]) ? (string) $tmp[1] : null;
+                    }
                     if (strpos($mw, '\\') === false && is_object($app) && method_exists($app, 'config')) {
                         $aliases = $app->config('middleware_alias', array());
                         if (is_array($aliases) && array_key_exists($mw, $aliases) && is_string($aliases[$mw]) && $aliases[$mw] !== '') {
@@ -42,6 +48,12 @@ class Pipeline
                 }
 
                 if (is_object($mw) && method_exists($mw, 'handle')) {
+                    if ($mwParam !== null) {
+                        $rm = new \ReflectionMethod($mw, 'handle');
+                        if ($rm->getNumberOfParameters() >= 3) {
+                            return $mw->handle($request, $next, $mwParam);
+                        }
+                    }
                     return $mw->handle($request, $next);
                 }
 

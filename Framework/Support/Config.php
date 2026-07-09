@@ -23,11 +23,41 @@ class Config
 
         sort($files);
         foreach ($files as $file) {
+            $base = basename($file);
+            if ($base === 'app.local.php') {
+                continue;
+            }
+            if (preg_match('/^app\.[a-zA-Z0-9_\-]+\.php$/', $base)) {
+                continue;
+            }
             $cfg = include $file;
             if (!is_array($cfg)) {
                 continue;
             }
             $merged = self::merge($merged, $cfg);
+        }
+
+        $env = getenv('APP_ENV');
+        if ($env === false || $env === '') {
+            $env = isset($_SERVER['APP_ENV']) ? (string) $_SERVER['APP_ENV'] : '';
+        }
+        $env = trim((string) $env);
+        if ($env !== '') {
+            $envFile = $configDir . DIRECTORY_SEPARATOR . 'app.' . $env . '.php';
+            if (is_file($envFile)) {
+                $cfg = include $envFile;
+                if (is_array($cfg)) {
+                    $merged = self::merge($merged, $cfg);
+                }
+            }
+        }
+
+        $localFile = $configDir . DIRECTORY_SEPARATOR . 'app.local.php';
+        if (is_file($localFile)) {
+            $cfg = include $localFile;
+            if (is_array($cfg)) {
+                $merged = self::merge($merged, $cfg);
+            }
         }
 
         return $merged;

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 文件作用：生成配置缓存（storage/cache/config.php），减少生产环境每次请求扫描 Config 目录的开销。
+ */
+
 $basePath = dirname(__DIR__);
 
 require $basePath . DIRECTORY_SEPARATOR . 'Framework' . DIRECTORY_SEPARATOR . 'Foundation' . DIRECTORY_SEPARATOR . 'Autoloader.php';
@@ -23,4 +27,3 @@ $php = "<?php\n\nreturn " . $export . ";\n";
 
 file_put_contents($file, $php, LOCK_EX);
 echo "config cached: " . $file . "\n";
-

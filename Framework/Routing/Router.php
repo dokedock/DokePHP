@@ -156,6 +156,20 @@ class Router
         return Api::fail('', ErrorCodes::NOT_FOUND, 404, null);
     }
 
+    public function dumpRoutes()
+    {
+        $out = array();
+        foreach ($this->routes as $r) {
+            $out[] = array(
+                'method' => isset($r['method']) ? (string) $r['method'] : '',
+                'path' => isset($r['path']) ? (string) $r['path'] : '',
+                'handler' => $this->stringifyHandler(isset($r['handler']) ? $r['handler'] : null),
+                'middleware' => isset($r['middleware']) && is_array($r['middleware']) ? $r['middleware'] : array(),
+            );
+        }
+        return $out;
+    }
+
     private function runRoute(array $route, Request $request, array $params, Application $app)
     {
         $mws = isset($route['middleware']) && is_array($route['middleware']) ? $route['middleware'] : array();
@@ -218,6 +232,24 @@ class Router
         }
 
         return Api::fail('invalid_handler', ErrorCodes::SERVER_ERROR, 500, null);
+    }
+
+    private function stringifyHandler($handler)
+    {
+        if (is_string($handler)) {
+            return $handler;
+        }
+        if (is_array($handler) && count($handler) === 2) {
+            $a = is_object($handler[0]) ? get_class($handler[0]) : (string) $handler[0];
+            return $a . '@' . (string) $handler[1];
+        }
+        if (is_object($handler)) {
+            return get_class($handler);
+        }
+        if (is_callable($handler)) {
+            return 'callable';
+        }
+        return 'unknown';
     }
 
     private function currentGroup()

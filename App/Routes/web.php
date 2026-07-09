@@ -9,6 +9,8 @@ $router->get('/ping', 'App\\Controllers\\HomeController@ping');
 $router->get('/hello/{name}', 'App\\Controllers\\HomeController@hello');
 $router->post('/echo', 'App\\Controllers\\HomeController@echoData');
 $router->get('/health', 'App\\Controllers\\HealthController@index');
+$router->get('/__routes', 'App\\Controllers\\DocsController@routes');
+$router->get('/__debug', 'App\\Controllers\\DocsController@requestInfo');
 
 $router->group(array(
     'prefix' => '/account',
@@ -22,4 +24,11 @@ $router->group(array(
     'middleware' => array('Framework\\Http\\AuthRequiredMiddleware'),
 ), function ($router) {
     $router->get('/me', 'App\\Controllers\\HomeController@me');
+});
+
+$router->group(array(
+    'prefix' => '/admin',
+    'middleware' => array('auth_required', 'permission:admin'),
+), function ($router) {
+    $router->get('/stats', 'App\\Controllers\\HomeController@adminStats');
 });

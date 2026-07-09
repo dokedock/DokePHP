@@ -20,7 +20,7 @@ class Auth
                 if ($t === '') {
                     continue;
                 }
-                $tokens[$t] = array('token' => $t, 'exp' => 0, 'uid' => null);
+                $tokens[$t] = array('token' => $t, 'exp' => 0, 'uid' => null, 'roles' => array());
             }
         }
 
@@ -125,6 +125,7 @@ class Auth
         $token = (string) $parts[0];
         $exp = 0;
         $uid = null;
+        $roles = array();
 
         if (isset($parts[1]) && $parts[1] !== '') {
             $exp = ctype_digit((string) $parts[1]) ? (int) $parts[1] : 0;
@@ -132,12 +133,19 @@ class Auth
         if (isset($parts[2]) && $parts[2] !== '') {
             $uid = (string) $parts[2];
         }
+        if (isset($parts[3]) && $parts[3] !== '') {
+            $rolesStr = (string) $parts[3];
+            $roles = array_map('trim', explode(',', $rolesStr));
+            $roles = array_values(array_filter($roles, function ($v) {
+                return $v !== '';
+            }));
+        }
 
         if ($token === '') {
             return false;
         }
 
-        return array('token' => $token, 'exp' => $exp, 'uid' => $uid);
+        return array('token' => $token, 'exp' => $exp, 'uid' => $uid, 'roles' => $roles);
     }
 
     private static function absPath(Application $app, $path)

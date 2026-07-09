@@ -37,7 +37,7 @@ class Validator
                     continue;
                 }
 
-                $fail = self::checkRule($name, $arg, $exists, $value);
+                $fail = self::checkRule($name, $arg, $exists, $value, $data, $field);
                 if ($fail !== null) {
                     $key = $field . '.' . $name;
                     $msg = array_key_exists($key, $messages) ? $messages[$key] : $fail;
@@ -55,7 +55,7 @@ class Validator
         );
     }
 
-    private static function checkRule($name, $arg, $exists, $value)
+    private static function checkRule($name, $arg, $exists, $value, array $data, $field)
     {
         if ($name === 'sometimes') {
             return null;
@@ -73,6 +73,45 @@ class Validator
             }
             if (is_array($value) && empty($value)) {
                 return 'required';
+            }
+            return null;
+        }
+
+        if ($name === 'required_if') {
+            if ($arg === null || $arg === '') {
+                return null;
+            }
+            $tmp = explode(',', (string) $arg, 2);
+            $other = isset($tmp[0]) ? (string) $tmp[0] : '';
+            $expected = isset($tmp[1]) ? (string) $tmp[1] : '';
+            if ($other === '') {
+                return null;
+            }
+            $otherExists = array_key_exists($other, $data);
+            $otherVal = $otherExists ? $data[$other] : null;
+            if ((string) $otherVal === $expected) {
+                $fail = self::checkRule('required', null, $exists, $value, $data, $field);
+                return $fail === null ? null : 'required_if';
+            }
+            return null;
+        }
+
+        if ($name === 'required_with') {
+            if ($arg === null || $arg === '') {
+                return null;
+            }
+            $others = array_map('trim', explode(',', (string) $arg));
+            $others = array_values(array_filter($others, function ($v) {
+                return $v !== '';
+            }));
+            if (empty($others)) {
+                return null;
+            }
+            foreach ($others as $o) {
+                if (array_key_exists($o, $data)) {
+                    $fail = self::checkRule('required', null, $exists, $value, $data, $field);
+                    return $fail === null ? null : 'required_with';
+                }
             }
             return null;
         }
@@ -99,6 +138,10 @@ class Validator
                 }
             }
             return 'must_be_bool';
+        }
+
+        if ($name === 'numeric') {
+            return is_numeric($value) ? null : 'must_be_numeric';
         }
 
         if ($name === 'string') {
@@ -162,12 +205,43 @@ class Validator
             return 'max';
         }
 
+        if ($name === 'between') {
+            $tmp = explode(',', (string) $arg, 2);
+            $min = isset($tmp[0]) ? (int) $tmp[0] : 0;
+            $max = isset($tmp[1]) ? (int) $tmp[1] : 0;
+            if ($max < $min) {
+                $max = $min;
+            }
+            if (is_string($value)) {
+                $len = strlen($value);
+                return ($len >= $min && $len <= $max) ? null : 'between';
+            }
+            if (is_numeric($value)) {
+                $num = (float) $value;
+                return ($num >= $min && $num <= $max) ? null : 'between';
+            }
+            if (is_array($value)) {
+                $cnt = count($value);
+                return ($cnt >= $min && $cnt <= $max) ? null : 'between';
+            }
+            return 'between';
+        }
+
         if ($name === 'in') {
             $opts = array();
             if ($arg !== null && $arg !== '') {
                 $opts = array_map('trim', explode(',', $arg));
             }
             return in_array((string) $value, $opts, true) ? null : 'not_in';
+        }
+
+        if ($name === 'same') {
+            $other = (string) $arg;
+            if ($other === '') {
+                return null;
+            }
+            $otherVal = array_key_exists($other, $data) ? $data[$other] : null;
+            return ((string) $value === (string) $otherVal) ? null : 'not_same';
         }
 
         if ($name === 'email') {

@@ -56,6 +56,12 @@ return array(
         'revoked_file' => '',
         'except' => array('/health', '/ping'),
     ),
+    'rbac' => array(
+        'enabled' => false,
+        'roles' => array(
+            'admin' => array('*'),
+        ),
+    ),
     'middleware_alias' => array(
         'access_log' => 'Framework\\Http\\AccessLogMiddleware',
         'security_headers' => 'Framework\\Http\\SecurityHeadersMiddleware',
@@ -64,6 +70,7 @@ return array(
         'rate_limit' => 'Framework\\Http\\RateLimitMiddleware',
         'auth' => 'Framework\\Http\\AuthMiddleware',
         'auth_required' => 'Framework\\Http\\AuthRequiredMiddleware',
+        'permission' => 'Framework\\Http\\PermissionMiddleware',
     ),
     'middleware' => array(
         'Framework\\Http\\AccessLogMiddleware',

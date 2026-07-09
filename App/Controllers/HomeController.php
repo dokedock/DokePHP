@@ -46,8 +46,19 @@ class HomeController extends BaseController
 
     public function me(Request $request, array $params = array())
     {
+        $auth = method_exists($request, 'attribute') ? $request->attribute('auth', null) : null;
         return $this->ok(array(
             'ok' => true,
+            'time' => date('Y-m-d H:i:s'),
+            'auth' => $auth,
+        ));
+    }
+
+    public function adminStats(Request $request, array $params = array())
+    {
+        return $this->ok(array(
+            'ok' => true,
+            'name' => 'admin',
             'time' => date('Y-m-d H:i:s'),
         ));
     }

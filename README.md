@@ -33,7 +33,7 @@
 本地快速运行（PHP 内置 Server）：
 
 ```bash
-php -S 127.0.0.1:8000 -t Public
+php -S 127.0.0.1:8000 -t Public Public/index.php
 ```
 
 测试接口：
@@ -45,6 +45,7 @@ php -S 127.0.0.1:8000 -t Public
 - `GET /health`
 - `GET /account/me`（演示路由组 + 路由级中间件：AuthMiddleware）
 - `GET /secure/me`（演示路由组 + 路由级强制鉴权：AuthRequiredMiddleware）
+- `GET /admin/stats`（演示 RBAC：auth_required + permission:admin）
 
 ## 说明
 
@@ -61,7 +62,9 @@ php -S 127.0.0.1:8000 -t Public
 
 ```bash
 php bin/cache-config.php
-php bin/migrate.php
+php bin/migrate.php migrate
+php bin/migrate.php status
+php bin/migrate.php rollback 1
 ```
 
 ## 上线建议（必须做）
@@ -74,6 +77,15 @@ php bin/migrate.php
 - 如需接口鉴权：
   - 全局鉴权：启用 `auth.enabled` 并配置 `auth.tokens` 或 `auth.token_file`（Bearer Token）
   - 路由级强制鉴权：对路由/路由组使用 `Framework\\Http\\AuthRequiredMiddleware`
+- RBAC 权限（403）：
+  - 启用 `rbac.enabled`
+  - 路由使用 `permission:xxx`（例如 `permission:admin` 或 `permission:order.read`）
+  - token_file 行格式支持 `token|expTimestamp|uid|role1,role2`
 - 如需开放 API / Webhook 验签：启用 `signature.enabled` 并配置 `signature.secret`，客户端按约定传 `X-Signature/X-Timestamp/X-Nonce`
 - 生产环境建议启用访问日志与基础限流（本项目已提供中间件）
 - 接口参数建议统一走 `BaseController::validate()`（字段级错误会以 422 返回）
+
+## 迁移文件约定
+
+- Up：`xxxx_name.sql` 或 `xxxx_name.up.sql`
+- Down（可选）：对应 `xxxx_name.down.sql`
