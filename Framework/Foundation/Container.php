@@ -82,9 +82,42 @@ class Container
             $args = array();
             $params = $ctor->getParameters();
             foreach ($params as $p) {
-                $cls = method_exists($p, 'getClass') ? $p->getClass() : null;
-                if ($cls) {
-                    $args[] = $this->make($cls->getName());
+                $clsName = null;
+                if (method_exists($p, 'getType')) {
+                    $type = $p->getType();
+                    if ($type) {
+                        if (is_object($type) && get_class($type) === 'ReflectionNamedType') {
+                            if (!$type->isBuiltin()) {
+                                $clsName = $type->getName();
+                            }
+                        } elseif (is_object($type) && get_class($type) === 'ReflectionUnionType' && method_exists($type, 'getTypes')) {
+                            $ts = $type->getTypes();
+                            $pick = null;
+                            if (is_array($ts)) {
+                                foreach ($ts as $one) {
+                                    if (is_object($one) && get_class($one) === 'ReflectionNamedType' && !$one->isBuiltin()) {
+                                        if ($pick !== null) {
+                                            $pick = null;
+                                            break;
+                                        }
+                                        $pick = $one->getName();
+                                    }
+                                }
+                            }
+                            if ($pick !== null) {
+                                $clsName = $pick;
+                            }
+                        }
+                    }
+                } elseif (method_exists($p, 'getClass')) {
+                    $cls = $p->getClass();
+                    if ($cls) {
+                        $clsName = $cls->getName();
+                    }
+                }
+
+                if ($clsName !== null && $clsName !== '') {
+                    $args[] = $this->make($clsName);
                     continue;
                 }
                 if ($p->isDefaultValueAvailable()) {

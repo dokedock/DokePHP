@@ -50,6 +50,10 @@ return array(
     ),
     'auth' => array(
         'enabled' => false,
+        'driver' => 'file',
+        'db' => array(
+            'touch_last_used' => true,
+        ),
         'tokens' => array(),
         'token_file' => '',
         'revoked' => array(),
@@ -58,9 +62,14 @@ return array(
     ),
     'rbac' => array(
         'enabled' => false,
+        'driver' => 'config',
         'roles' => array(
             'admin' => array('*'),
         ),
+    ),
+    'audit' => array(
+        'enabled' => false,
+        'max_meta_bytes' => 2048,
     ),
     'middleware_alias' => array(
         'access_log' => 'Framework\\Http\\AccessLogMiddleware',
@@ -70,7 +79,10 @@ return array(
         'rate_limit' => 'Framework\\Http\\RateLimitMiddleware',
         'auth' => 'Framework\\Http\\AuthMiddleware',
         'auth_required' => 'Framework\\Http\\AuthRequiredMiddleware',
+        'rbac_required' => 'Framework\\Http\\RbacRequiredMiddleware',
+        'feature_required' => 'Framework\\Http\\FeatureRequiredMiddleware',
         'permission' => 'Framework\\Http\\PermissionMiddleware',
+        'audit' => 'Framework\\Http\\AuditMiddleware',
     ),
     'middleware' => array(
         'Framework\\Http\\AccessLogMiddleware',

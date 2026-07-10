@@ -2,13 +2,13 @@
 .idea/
 .vscode/
 
-storage/logs/*.log
-storage/logs/*.jsonl
-storage/rate_limit/*.json
+storage/logs/*
+!storage/logs/.gitkeep
+
+storage/rate_limit/*
+!storage/rate_limit/.gitkeep
 storage/cache/*
 !storage/cache/.gitkeep
-!storage/logs/.gitkeep
-!storage/rate_limit/.gitkeep
 !storage/.gitkeep
 
 App/Config/app.local.php

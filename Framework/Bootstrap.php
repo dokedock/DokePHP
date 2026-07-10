@@ -25,7 +25,13 @@ $loader->register();
 
 $cfgDir = $basePath . DS . 'App' . DS . 'Config';
 $configCache = $basePath . DS . 'storage' . DS . 'cache' . DS . 'config.php';
-if (is_file($configCache)) {
+$env = getenv('APP_ENV');
+if ($env === false || $env === '') {
+    $env = isset($_SERVER['APP_ENV']) ? (string) $_SERVER['APP_ENV'] : '';
+}
+if ($env !== '') {
+    $config = \Framework\Support\Config::load($cfgDir);
+} elseif (is_file($configCache)) {
     $tmp = include $configCache;
     $config = is_array($tmp) ? $tmp : \Framework\Support\Config::load($cfgDir);
 } else {
@@ -41,6 +47,10 @@ $debug = (bool) \Framework\Support\Config::get($config, 'app.debug', false);
 if ($debug) {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
+    if (function_exists('opcache_reset')) {
+        @opcache_reset();
+    }
+    @clearstatcache();
 } else {
     error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
     ini_set('display_errors', '0');

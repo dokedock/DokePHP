@@ -78,6 +78,7 @@ class Response
                 422 => 'Unprocessable Entity',
                 429 => 'Too Many Requests',
                 413 => 'Payload Too Large',
+                409 => 'Conflict',
             );
 
             if (isset($phrases[$this->status])) {

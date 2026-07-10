@@ -9,7 +9,6 @@ namespace Framework\Http;
 use Framework\Foundation\Application;
 use Framework\Foundation\MiddlewareInterface;
 use Framework\Support\Api;
-use Framework\Support\Auth;
 use Framework\Support\ErrorCodes;
 
 class AuthMiddleware implements MiddlewareInterface
@@ -37,8 +36,8 @@ class AuthMiddleware implements MiddlewareInterface
         $auth = method_exists($request, 'authorization') ? (string) $request->authorization('') : (string) $request->header('Authorization', '');
         $token = $this->parseBearer($auth);
 
-        $tokenMap = Auth::loadTokenMap($this->app, $cfg);
-        $payload = Auth::validateToken($token, $tokenMap);
+        $svc = $this->app->make('App\\Services\\AuthService');
+        $payload = $svc->authenticateBearer($token);
         if (!$payload) {
             return Api::fail('', ErrorCodes::UNAUTHORIZED, 401, null);
         }

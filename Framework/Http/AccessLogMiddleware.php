@@ -50,7 +50,11 @@ class AccessLogMiddleware implements MiddlewareInterface
     private function makeRequestId()
     {
         if (function_exists('random_bytes')) {
-            return bin2hex(random_bytes(16));
+            try {
+                return bin2hex(random_bytes(16));
+            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+            }
         }
 
         if (function_exists('openssl_random_pseudo_bytes')) {

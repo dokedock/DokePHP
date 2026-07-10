@@ -62,4 +62,64 @@ class HomeController extends BaseController
             'time' => date('Y-m-d H:i:s'),
         ));
     }
+
+    public function adminRbac(Request $request, array $params = array())
+    {
+        $auth = method_exists($request, 'attribute') ? $request->attribute('auth', null) : null;
+        $roles = is_array($auth) && isset($auth['roles']) && is_array($auth['roles']) ? $auth['roles'] : array();
+
+        $cfg = $this->app->config('rbac', array());
+        if (!is_array($cfg)) {
+            $cfg = array();
+        }
+
+        $driver = isset($cfg['driver']) ? strtolower(trim((string) $cfg['driver'])) : 'config';
+        if ($driver === '') {
+            $driver = 'config';
+        }
+
+        $allowConfig = array();
+        if ($driver === 'config' || $driver === 'hybrid') {
+            $map = isset($cfg['roles']) && is_array($cfg['roles']) ? $cfg['roles'] : array();
+            foreach ($roles as $r) {
+                $r = (string) $r;
+                if ($r === '' || !array_key_exists($r, $map) || !is_array($map[$r])) {
+                    continue;
+                }
+                foreach ($map[$r] as $p) {
+                    $p = trim((string) $p);
+                    if ($p !== '') {
+                        $allowConfig[$p] = true;
+                    }
+                }
+            }
+        }
+
+        $allowDb = array();
+        if ($driver === 'db' || $driver === 'hybrid') {
+            $svc = $this->app->make('App\\Services\\RbacService');
+            $tmp = $svc->permissionsForRoles($roles);
+            if (is_array($tmp)) {
+                $allowDb = $tmp;
+            }
+        }
+
+        $merged = array_merge(array_keys($allowConfig), array_keys($allowDb));
+        $merged = array_values(array_unique(array_filter(array_map('trim', $merged), function ($v) {
+            return $v !== '';
+        })));
+        sort($merged);
+
+        return $this->ok(array(
+            'auth' => $auth,
+            'rbac' => array(
+                'enabled' => !empty($cfg['enabled']),
+                'driver' => $driver,
+                'roles' => $roles,
+                'permissions_config' => array_keys($allowConfig),
+                'permissions_db' => array_keys($allowDb),
+                'permissions_merged' => $merged,
+            ),
+        ));
+    }
 }

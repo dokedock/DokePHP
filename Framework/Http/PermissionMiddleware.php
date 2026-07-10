@@ -52,9 +52,7 @@ class PermissionMiddleware implements MiddlewareInterface
             if ($this->isAllowed($p, $allowed)) {
                 continue;
             }
-            if (!array_key_exists($p, $allowed)) {
-                return Api::fail('', ErrorCodes::FORBIDDEN, 403, null);
-            }
+            return Api::fail('', ErrorCodes::FORBIDDEN, 403, null);
         }
 
         return call_user_func($next, $request);
@@ -86,6 +84,38 @@ class PermissionMiddleware implements MiddlewareInterface
     }
 
     private function permissionsForRoles(array $roles, array $cfg)
+    {
+        $out = array();
+
+        $driver = isset($cfg['driver']) ? strtolower(trim((string) $cfg['driver'])) : 'config';
+        if ($driver === '') {
+            $driver = 'config';
+        }
+
+        if ($driver === 'config' || $driver === 'hybrid') {
+            $tmp = $this->permissionsForRolesFromConfig($roles, $cfg);
+            foreach ($tmp as $p => $v) {
+                $out[(string) $p] = true;
+            }
+        }
+
+        if ($driver === 'db' || $driver === 'hybrid') {
+            $svc = $this->app->make('App\\Services\\RbacService');
+            $tmp = $svc->permissionsForRoles($roles);
+            if (is_array($tmp)) {
+                foreach ($tmp as $p => $v) {
+                    $p = trim((string) $p);
+                    if ($p !== '') {
+                        $out[$p] = true;
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    private function permissionsForRolesFromConfig(array $roles, array $cfg)
     {
         $map = isset($cfg['roles']) && is_array($cfg['roles']) ? $cfg['roles'] : array();
         $out = array();

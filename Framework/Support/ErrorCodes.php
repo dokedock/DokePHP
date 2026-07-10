@@ -15,6 +15,7 @@ class ErrorCodes
     const FORBIDDEN = 40300;
     const NOT_FOUND = 40400;
     const METHOD_NOT_ALLOWED = 40500;
+    const CONFLICT = 40900;
     const VALIDATION_FAILED = 42200;
     const TOO_MANY_REQUESTS = 42900;
     const PAYLOAD_TOO_LARGE = 41300;
@@ -30,6 +31,7 @@ class ErrorCodes
             self::FORBIDDEN => 'forbidden',
             self::NOT_FOUND => 'not_found',
             self::METHOD_NOT_ALLOWED => 'method_not_allowed',
+            self::CONFLICT => 'conflict',
             self::VALIDATION_FAILED => 'validation_failed',
             self::TOO_MANY_REQUESTS => 'too_many_requests',
             self::PAYLOAD_TOO_LARGE => 'payload_too_large',
@@ -40,4 +42,3 @@ class ErrorCodes
         return array_key_exists($code, $map) ? $map[$code] : 'error';
     }
 }
-
